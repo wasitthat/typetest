@@ -22,7 +22,7 @@ class SpeedTest:
         self.i = 0
         self.j = 0
         self.iter_times = []
-        self.bg = '#374273'
+        self.bg = '#1b2941'
         self.game_text = [x.split('\n')[0] for x in words]
         self.logoImg = Image.open('tt.png')
         self.logoImg = self.logoImg.resize((150, 60))
@@ -45,6 +45,11 @@ class SpeedTest:
         self.correct_chars = 0
         self.incorrect_words = 0
         self.incorrect_chars = 0
+        self.session_correct_words = 0
+        self.session_incorrect_words = 0
+        self.session_correct_chars = 0
+        self.session_incorrect_chars = 0
+        self.correct = True
         self.current_key = ''
         self.finish_time = None
         self.words_shown = []
@@ -87,6 +92,7 @@ class SpeedTest:
         Label(self.window, text='\u00A9 John Oden 2022', bg=self.bg).grid(column=1, row=12)
 
     def onKeyPress(self, event):
+        print(event)
         if event.char == '\x1b':
             self.end_game()
         if event.keysym == 'Return':
@@ -97,6 +103,8 @@ class SpeedTest:
             if not self.game_running:
                 self.game_running = True
                 self.i, self.j = 0, 0
+        if self.i == 0:
+            self.correct = True
         if self.game_running:
             if not self.start_time:  # check for start time
                 self.start_time = time.time()  # set if not already
@@ -110,22 +118,25 @@ class SpeedTest:
                         if self.words_shown[self.i][self.j] == ' ':  # ---- at the end of the word?----#
                             if self.current_key != ' ':  # user should enter 'space'
                                 self.incorrect_chars += 1  # if not,
-                                self.incorrect_words += 1  # ding the score
                                 self.mdr.text(text=' ', xy=(self.w, self.h), fill='#ff0000ff',
                                               font=self.font)  # post the fail
                                 self.w += self.font.getsize(' ')[0] + 15
                             else:  # otherwise
                                 self.correct_chars += 1  # score a letter
-                                self.correct_words += 1  # score a word
                                 self.cor_words.append(self.words_shown[self.i])  # add it to the list
                                 self.mdr.text(text=' ', xy=(self.w, self.h), fill='#00ff00ff',
                                               font=self.font)  # post the score
                                 self.w += self.font.getsize(' ')[0] + 15
+                            if self.correct:
+                                self.correct_words += 1
+                            else:
+                                self.incorrect_words += 1
                             if self.words_shown[self.i + 1] == '\n':
                                 self.h += self.ht * 2  # line down by one
                                 self.i += 1  # first letter of next word
                                 self.w = 0  # carriage return to zero
                                 self.j = 0  # next letter
+                            self.correct = True
                             self.j = 0
                             self.i += 1
                         else:  # ---- otherwise ----#
@@ -133,9 +144,9 @@ class SpeedTest:
                                 self.mdr.text(text=self.current_key, xy=(self.w, self.h),
                                               fill='#00ff00ff', font=self.font)  # post it
                                 self.correct_chars += 1  # score it
-
                             else:  # you screwed up
                                 self.incorrect_chars += 1  # ding
+                                self.correct = False
                                 self.mdr.text(text=self.words_shown[self.i][self.j],
                                               xy=(self.w, self.h), fill='#ff0000ff',
                                               font=self.font)  # post fail
@@ -143,10 +154,11 @@ class SpeedTest:
                             self.w += self.wt
                         self.current_key = ''
                         self.update_screen()
+
                     if self.i >= len(self.words_shown)-1:
                         if self.j >= len(self.words_shown[self.i-1])-1:  # don't segfault
                             self.end_game()
-
+        print('exiting on key press')
     def update_screen(self):
         try:
             self.gameImg.paste(self.text_mask, (0, 0), self.text_mask)  # format screen
@@ -154,6 +166,7 @@ class SpeedTest:
             self.text_screen = Label(self.window, image=self.gameImg.image, bg=self.text_bg)  # frame it
             self.text_screen.grid(column=1, row=1)
         except:
+            print('fail')
             pass
 
     def get_word(self):
@@ -164,6 +177,7 @@ class SpeedTest:
             self.text_screen.grid_forget()
             self.text_screen.destroy()
         except:
+            print('failure')
             pass
         self.text_screen = Label(self.window, width=800, height=500)
         self.gameImg = Image.new('RGBA', (400, 400))
@@ -207,14 +221,23 @@ class SpeedTest:
         self.text_mask = Image.new('L', (400, 400))
         self.mdr = ImageDraw.Draw(self.text_mask)
         self.font = ImageFont.truetype('ebrima', 25)
-        game_summary = f' Your scores: \nwords correct: {self.correct_words},'\
-                       f' \ncharacters correct: {self.correct_chars}'\
-                       f'\n\n Your misses: \nwords incorrect: {self.incorrect_words},' \
-                       f' \ncharacters incorrect: {self.incorrect_chars}'\
-                       f'\nTotal time taken: {round(self.finish_time - self.start_time, 2)}'\
-                       f'\nWords per minute: {self.correct_words / round(self.finish_time-self.start_time,2)/60}'
+        total_chars = self.correct_chars+self.incorrect_chars
+        total_five_letter_words = round(total_chars/5)
+        total_time_in_seconds = round(self.finish_time - self.start_time)
+        total_words = self.correct_words+self.incorrect_words
+        wpm = round(total_five_letter_words / (total_time_in_seconds/60),2)
+        accuracy = (round(self.correct_chars/total_chars ,2)*100)
+        game_summary = f' Your scores: \nTotal Words: {total_words},'\
+                       f'\nWords Correct: {self.correct_words},'\
+                       f' \nCharacters Correct: {self.correct_chars}'\
+                       f'\n\n Your Misses: \nWords incorrect: {self.incorrect_words},' \
+                       f' \nCharacters Incorrect: {self.incorrect_chars}'\
+                       f'\nTotal Time Taken: {total_time_in_seconds}'\
+                       f'\nWords Per Minute: {wpm}'\
+                       f'\nAccuracy: {accuracy}%'
+
         self.mdr.text(text=game_summary, xy=(0, 0),
-                      fill="#77ffff", font=self.font,)
+                      fill="#77ffff", font=self.font)
         self.gameImg = Image.open('stars.jpg')
         self.gameImg = self.gameImg.resize((400, 400))
         self.gameImg.paste(self.text_mask, (0, 0), self.text_mask)
