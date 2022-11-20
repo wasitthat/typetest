@@ -92,7 +92,7 @@ class SpeedTest:
         Label(self.window, text='\u00A9 John Oden 2022', bg=self.bg).grid(column=1, row=12)
 
     def onKeyPress(self, event):
-        print(event)
+        #print(event)
         if event.char == '\x1b':
             self.end_game()
         if event.keysym == 'Return':
@@ -158,7 +158,8 @@ class SpeedTest:
                     if self.i >= len(self.words_shown)-1:
                         if self.j >= len(self.words_shown[self.i-1])-1:  # don't segfault
                             self.end_game()
-        print('exiting on key press')
+        #print('exiting on key press')
+
     def update_screen(self):
         try:
             self.gameImg.paste(self.text_mask, (0, 0), self.text_mask)  # format screen
@@ -225,8 +226,8 @@ class SpeedTest:
         total_five_letter_words = round(total_chars/5)
         total_time_in_seconds = round(self.finish_time - self.start_time)
         total_words = self.correct_words+self.incorrect_words
-        wpm = round(total_five_letter_words / (total_time_in_seconds/60),2)
-        accuracy = (round(self.correct_chars/total_chars ,2)*100)
+        wpm = round(total_five_letter_words / (total_time_in_seconds/60), 2)
+        accuracy = (round(self.correct_chars/total_chars, 2)*100)
         game_summary = f' Your scores: \nTotal Words: {total_words},'\
                        f'\nWords Correct: {self.correct_words},'\
                        f' \nCharacters Correct: {self.correct_chars}'\
